@@ -1,0 +1,32 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+
+# Ambiente/segredos
+.env
+.env.*.local
+.env.local
+
+# Vite
+.cache/
+vite.svg
+
+# Testes/Cobertura
+coverage/
+*.lcov

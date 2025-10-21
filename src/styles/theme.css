@@ -1,0 +1,176 @@
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --panel: #0f172a;
+  --panel-2: #0e1628;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --border: #243041;
+  --accent: #1f2937;
+  --map-bg: #0b1220;
+  --route-color: #ef4444;
+
+  /* Tamanho das marcações (escopo global) */
+  --marker-scale: 0.80;         /* 1.00 = original; diminua para reduzir */
+  --marker-hover-scale: 1.18;    /* aumento ao passar o mouse */
+  --marker-stroke-width: 1.2;    /* espessura do contorno */
+}
+
+:root[data-theme="light"] {
+  --bg: #f7fafc;
+  --panel: #ffffff;
+  --panel-2: #f3f4f6;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #f3f4f6;
+  --map-bg: #eef2f7;
+  --route-color: #dc2626;
+
+  --marker-scale: 0.78;
+  --marker-hover-scale: 1.16;
+  --marker-stroke-width: 1.1;
+}
+
+/* Base */
+html, body, #root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Painéis e inputs */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+.input h3 { margin: 0 0 8px; }
+.input .row { display: flex; gap: 12px; flex-wrap: wrap; }
+.input label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.input input[type="text"],
+.input input[type="number"],
+.input select {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  outline: none;
+}
+.input input[type="text"]::placeholder,
+.input input[type="number"]::placeholder { color: var(--muted); }
+
+/* Utilitários */
+.small { font-size: 12px; color: var(--muted); }
+.badge {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Botões */
+.button, button {
+  background: #374151;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+button.secondary { background: #374151; }
+button.ghost { background: transparent; }
+
+/* Legenda de paleta por perdas */
+.legend { display: grid; gap: 6px; margin-top: 10px; }
+.legend-bar {
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Cards minimalistas (Selecionados) */
+.selected-section { display: grid; gap: 10px; }
+.cards-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.card {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+}
+.card.minimal { padding: 10px 10px 8px; }
+.card-done { opacity: 0.9; }
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.card-title { font-weight: 600; letter-spacing: 0.2px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+.card-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+.muted { color: var(--muted); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+}
+.chip .chip-label { opacity: 0.9; }
+.chip .chip-value { font-weight: 700; }
+
+.card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ====== Leaflet: ajuste visual do tamanho dos CircleMarker via scale() ======
+   Nota: “radius” de CircleMarker é definido via JS; para reduzir globalmente
+   sem mudar o código, aplicamos transform: scale() no SVG circle interativo. */
+.leaflet-overlay-pane svg circle.leaflet-interactive {
+  transform: scale(var(--marker-scale));
+  transform-origin: center center;
+  stroke-width: var(--marker-stroke-width);
+}
+.leaflet-overlay-pane svg circle.leaflet-interactive:hover {
+  transform: scale(calc(var(--marker-scale) * var(--marker-hover-scale)));
+}
+
+/* Se quiser tamanhos diferentes por tipo (todos vs selecionados), adicione className
+   nos CircleMarker no App.tsx, por exemplo: className="mk-all" e "mk-sel", e use:
+.leaflet-overlay-pane svg circle.leaflet-interactive.mk-all {
+  transform: scale(calc(var(--marker-scale) * 0.85));
+}
+.leaflet-overlay-pane svg circle.leaflet-interactive.mk-sel {
+  transform: scale(calc(var(--marker-scale) * 1.05));
+}
+*/
