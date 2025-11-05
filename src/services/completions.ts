@@ -1,4 +1,5 @@
-import { supabase, onlineEnabled } from '../lib/supabase'
+// Reimplemented completions storage using localStorage and in-page events.
+// API kept compatible with existing usage: listCompletions, setCompletion, subscribeCompletions.
 
 export type CompletionRow = {
   id: string
@@ -10,47 +11,90 @@ export type CompletionRow = {
   done_at: string
 }
 
-export async function listCompletions(team: string, base: string): Promise<Set<string>> {
-  if (!onlineEnabled || !supabase) return new Set()
-  const { data, error } = await supabase
-    .from('completions')
-    .select('trafo_id, done')
-    .eq('team', team)
-    .eq('base', base)
+const STORAGE_PREFIX = 'rota-trafos:completions' // key = `${STORAGE_PREFIX}:${team}:${base}`
 
-  if (error) {
-    console.error('listCompletions error:', error)
-    return new Set()
+function storageKey(team: string, base: string) {
+  return `${STORAGE_PREFIX}:${team || '_'}:${base || '_'}`
+}
+
+function readRaw(team: string, base: string): Record<string, CompletionRow> {
+  try {
+    const key = storageKey(team, base)
+    const raw = localStorage.getItem(key)
+    if (!raw) return {}
+    return JSON.parse(raw) as Record<string, CompletionRow>
+  } catch (e) {
+    console.error('readRaw completions error', e)
+    return {}
   }
-  const rows = ((data as { trafo_id: string; done: boolean }[] | null) ?? [])
-  return new Set(rows.filter(r => r.done).map(r => r.trafo_id))
+}
+
+function writeRaw(team: string, base: string, map: Record<string, CompletionRow>) {
+  try {
+    const key = storageKey(team, base)
+    localStorage.setItem(key, JSON.stringify(map))
+  } catch (e) {
+    console.error('writeRaw completions error', e)
+  }
+}
+
+// Eventing: broadcast local changes so subscribers in the same page/app can react.
+// Event detail: { team, base, trafoId, done, row }
+const EVENT_NAME = 'rota-completions-changed'
+
+export async function listCompletions(team: string, base: string): Promise<Set<string>> {
+  // returns set of trafo_id marked as done
+  const map = readRaw(team, base)
+  const s = new Set<string>()
+  for (const k in map) {
+    if (map[k].done) s.add(map[k].trafo_id)
+  }
+  return s
 }
 
 export async function setCompletion(team: string, base: string, trafoId: string, done: boolean, actor?: string) {
-  if (!onlineEnabled || !supabase) return
-  const { error } = await supabase
-    .from('completions')
-    .upsert({ team, base, trafo_id: trafoId, done, actor: actor ?? null }, { onConflict: 'team,base,trafo_id' })
-  if (error) console.error('setCompletion error:', error)
+  const map = readRaw(team, base)
+  const now = new Date().toISOString()
+  const row: CompletionRow = {
+    id: `${team}:${base}:${trafoId}`,
+    team,
+    base,
+    trafo_id: trafoId,
+    done,
+    actor: actor ?? null,
+    done_at: now
+  }
+  map[trafoId] = row
+  writeRaw(team, base, map)
+
+  // broadcast
+  try {
+    const ev = new CustomEvent(EVENT_NAME, { detail: { team, base, trafoId, done, row } })
+    window.dispatchEvent(ev)
+  } catch (e) {
+    // older browsers: fallback to console
+    console.warn('dispatch event failed', e)
+  }
 }
 
 export function subscribeCompletions(team: string, base: string, onChange: (trafoId: string, done: boolean) => void) {
-  if (!onlineEnabled || !supabase) return { unsubscribe() {} }
-
-  const client = supabase!
-
-  const channel = client.channel(`completions`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'completions' }, (payload: any) => {
-      const row = payload.new ?? payload.old
-      if (!row) return
-      if (row.team !== team || row.base !== base) return
-      onChange(row.trafo_id, !!row.done)
-    })
-    .subscribe()
-
+  // returns an object with unsubscribe()
+  const handler = (ev: Event) => {
+    try {
+      // CustomEvent carries detail
+      const ce = ev as CustomEvent
+      const d = ce.detail
+      if (!d) return
+      if (d.team !== team || d.base !== base) return
+      onChange(d.trafoId, !!d.done)
+    } catch (e) {
+      console.error('subscribeCompletions handler error', e)
+    }
+  }
+  window.addEventListener(EVENT_NAME, handler as EventListener)
   return {
     unsubscribe() {
-      client.removeChannel(channel)
+      window.removeEventListener(EVENT_NAME, handler as EventListener)
     }
   }
 }

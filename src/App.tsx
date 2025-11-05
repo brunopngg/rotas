@@ -511,7 +511,6 @@ export default function App() {
               <label>Equipe</label>
               <input type="text" placeholder="ex.: equipe-norte" value={team} onChange={e => setTeam(e.target.value.trim())} />
               <div className="small">Concluídos em tempo real por “Equipe + Base”.</div>
-              {!onlineEnabled && <div className="small" style={{ color: '#f87171' }}>Supabase não configurado — funcionando offline (local).</div>}
             </div>
           </div>
         </div>
