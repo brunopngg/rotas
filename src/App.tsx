@@ -507,44 +507,12 @@ export default function App() {
                 <option value="light">Claro</option>
               </select>
             </div>
-            <div>
-              <label>Equipe</label>
-              <input type="text" placeholder="ex.: equipe-norte" value={team} onChange={e => setTeam(e.target.value.trim())} />
-              <div className="small">Concluídos em tempo real por “Equipe + Base”.</div>
             </div>
-          </div>
         </div>
 
         <hr />
 
         {/* Dados */}
-        <div className="input">
-          <label>Carregar outro CSV (separador ;, vírgula decimal)</label>
-          <input ref={fileRef} type="file" accept=".csv" onChange={async (e) => {
-            const f = e.target.files?.[0]
-            if (!f) return
-            try {
-              const data = await readLocalCsvFile(f)
-              setRows(data)
-              const firstBase = data[0]?.base ?? ''
-              setBaseSel(firstBase)
-              if (firstBase) {
-                const group = data.filter(d => d.base === firstBase)
-                if (group.length) {
-                  const lat = group.reduce((s, r) => s + r.lat, 0) / group.length
-                  const lon = group.reduce((s, r) => s + r.lon, 0) / group.length
-                  setBaseLat(lat); setBaseLon(lon); setPanCoord([lat, lon])
-                }
-              }
-              clearRoute()
-            } catch (err: any) {
-              alert(`Erro ao ler CSV: ${err?.message ?? err}`)
-            } finally {
-              if (fileRef.current) fileRef.current.value = ''
-            }
-          }} />
-          <div className="small">Padrão: tenta carregar public/csv.CSV automaticamente.</div>
-        </div>
 
         <hr />
 
@@ -579,30 +547,7 @@ export default function App() {
 
         <hr />
 
-        {/* Filtros + Legenda */}
-        <div className="input">
-          <h3>Filtros</h3>
-          <div className="row">
-            <div>
-              <label>Buscar por MF</label>
-              <input type="text" placeholder="ex.: 2000829" value={searchId} onChange={e => setSearchId(e.target.value)} />
-            </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <input type="checkbox" checked={hideCompletedOnMap} onChange={e => setHideCompletedOnMap(e.target.checked)} />
-              Ocultar concluídos no mapa
-            </label>
-          </div>
-          {rowsByBase.length > 0 && (
-            <div className="legend">
-              <div className="legend-bar" style={{ background: legendGradient }} />
-              <div className="legend-labels">
-                <span>{lossDomain.min.toLocaleString('pt-BR')}</span>
-                <span>Maior perda</span>
-                <span>{lossDomain.max.toLocaleString('pt-BR')}</span>
-              </div>
-            </div>
-          )}
-        </div>
+
 
         <hr />
 
@@ -668,11 +613,7 @@ export default function App() {
               : <div className="badge">Distância total: {totalKm.toFixed(2)} km</div>
             }
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button onClick={exportCsv} disabled={!routeOrder.length}>Baixar CSV</button>
-            {gmapsUrl && <a className="button" href={gmapsUrl} target="_blank" rel="noreferrer">Abrir no Google Maps</a>}
-          </div>
-        </div>
+         </div>
 
         {/* Cards de Selecionados */}
         <hr />
